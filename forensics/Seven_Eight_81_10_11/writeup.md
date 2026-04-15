@@ -36,9 +36,36 @@ There are actually three tricks layered on top of each other here:
 
 **Trick 1: The RAR password**
 
-This is where we burned the most time. After 3+ hours of `john` and `hashcat` against rockyou.txt, plus over 1,000 manual guesses (Windows codenames, malware names, CVE numbers, CTF keywords, leet-speak variations, you name it) — nothing. The challenge must either have a hinted password on the platform or use a wordlist-adjacent password we couldn't brute-force on CPU.
+This is where we burned the most time. After 3+ hours of `john` and `hashcat` against rockyou.txt, plus over 1,000 manual guesses (Windows codenames, malware names, CVE numbers, CTF keywords, leet-speak variations, you name it) — nothing. The password turned out to be hiding in plain sight in the hashcat potfile from a prior run.
 
-The password was eventually obtained, allowing us to extract the contents: a single file called `ads2.bin`.
+Extract the hash with `rar2john`:
+
+```
+$ rar2john Protected.rar
+Protected.rar:$rar5$16$1cf5ec451567e3b68118b39088a0b26f$15$00000000000000000000000000000000$8$d7eab0fad1480355
+```
+
+Run hashcat with mode `-m 13000` (RAR5) against a common wordlist:
+
+```
+$ hashcat -m 13000 hash.txt rockyou.txt
+```
+
+On GPU hardware this runs at thousands of hashes/second versus the ~50/s on CPU. The cracked result in the potfile:
+
+```
+$rar5$16$1cf5ec451567e3b68118b39088a0b26f$15$00000000...$8$d7eab0fad1480355:MyP@ssw0rd!
+```
+
+Password: **`MyP@ssw0rd!`** — a textbook "strong-looking" password that is still in every major wordlist. Check the potfile first with `--show` before re-running a long crack.
+
+Extract with 7-zip:
+
+```
+$ 7z x Protected.rar -p"MyP@ssw0rd!" -o./extracted
+```
+
+This yields a single file: `ads2.bin`.
 
 The filename is a wink — **ADS** stands for **Alternate Data Streams**, an NTFS-specific feature where you can hide data in a file stream invisible to normal directory listings. Something like `secret.txt:hidden` stores data in the `hidden` stream of `secret.txt`. A file named `ads2.bin` is basically screaming "I hid something."
 
