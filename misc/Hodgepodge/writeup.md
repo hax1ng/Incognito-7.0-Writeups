@@ -227,7 +227,7 @@ def solve_tc(orc, n):
     orc.answer(2)
 ```
 
-The full solver is in `oracle4.py`.
+The full solver is in `solve.py`.
 
 ### The Encoding Pipeline
 
